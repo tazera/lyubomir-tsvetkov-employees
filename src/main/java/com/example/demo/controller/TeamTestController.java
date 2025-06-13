@@ -27,7 +27,7 @@ public class TeamTestController {
     private TeamMapper teamMapper;
 
     @PostMapping("/teams")
-    public ResponseEntity<List<TeamDTO>> testCalculateTeams(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<List<TeamDTO>> testCalculateTeams(@RequestParam("file") MultipartFile file) throws Exception {
         // Create and validate the request DTO
         FileUploadRequestDTO requestDTO = new FileUploadRequestDTO(file);
         if (!requestDTO.isValid()) {
@@ -40,11 +40,9 @@ public class TeamTestController {
             List<EmployeeProject> assignments = csvLoadService.loadCsv(file);
             // Calculate teams
             List<Team> teams = teamCalculatorService.calculateTeams(assignments);
-            // Convert domain models to DTOs
             List<TeamDTO> teamDTOs = teamMapper.toDtoList(teams);
             return ResponseEntity.ok(teamDTOs);
         } catch (Exception e) {
-            // Convert generic exceptions to our specific exception with a better message
             if (e instanceof CsvParseException) {
                 throw e;
             }
@@ -53,11 +51,10 @@ public class TeamTestController {
     }
 
     @GetMapping("/teams/from-resource")
-    public ResponseEntity<List<TeamDTO>> testCalculateTeamsFromResource() {
+    public ResponseEntity<List<TeamDTO>> testCalculateTeamsFromResource() throws Exception {
         try {
             List<EmployeeProject> assignments = csvLoadService.loadCsvFromResource("data/employees.csv");
             List<Team> teams = teamCalculatorService.calculateTeams(assignments);
-            // Convert domain models to DTOs
             List<TeamDTO> teamDTOs = teamMapper.toDtoList(teams);
             return ResponseEntity.ok(teamDTOs);
         } catch (Exception e) {
