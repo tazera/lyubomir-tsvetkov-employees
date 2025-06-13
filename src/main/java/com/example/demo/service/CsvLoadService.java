@@ -8,15 +8,44 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 
 @Service
 public class CsvLoadService {
 
-    private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    private static final List<DateTimeFormatter> DATE_FORMATS = Arrays.asList(
+            DateTimeFormatter.ofPattern("yyyy-MM-dd"),
+            DateTimeFormatter.ofPattern("MM/dd/yyyy"),
+            DateTimeFormatter.ofPattern("dd.MM.yyyy"),
+            DateTimeFormatter.ofPattern("MMM dd, yyyy"),
+            DateTimeFormatter.ofPattern("dd/MM/yyyy")
+    );
+
+    public static LocalDate parseFlexible(String input) {
+        if (input == null || input.isEmpty() || input.equalsIgnoreCase("NULL")) {
+            return null;
+        }
+
+        for (DateTimeFormatter formatter : DATE_FORMATS) {
+            try {
+                return LocalDate.parse(input, formatter);
+            } catch (DateTimeParseException ignored) {
+                // Try next format
+            }
+        }
+        throw new IllegalArgumentException("Unparseable date: " + input);
+    }
+
+
+
 
     // Load data from csv file uploaded via MultipartFile
     public List<EmployeeProject> loadCsv(MultipartFile file) throws Exception {
@@ -46,12 +75,10 @@ public class CsvLoadService {
 
             long empId    = Long.parseLong(c[0]);
             long project  = Long.parseLong(c[1]);
-            LocalDate from = LocalDate.parse(c[2], DATE_FMT);
+            LocalDate from = parseFlexible(c[2]);
 
             // Treat NULL or empty DateTo as an open interval
-            LocalDate to = (c[3].isEmpty() || c[3].equalsIgnoreCase("NULL"))
-                    ? null
-                    : LocalDate.parse(c[3], DATE_FMT);
+            LocalDate to = parseFlexible(c[3]);
 
             rows.add(new EmployeeProject(empId, project, from, to));
         }
