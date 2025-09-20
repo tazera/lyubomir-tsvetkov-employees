@@ -1,0 +1,28 @@
+# Dockerfile for React Frontend
+FROM node:18-alpine AS build
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files first (for better Docker layer caching)
+COPY frontend/package*.json ./
+
+# Install dependencies
+RUN npm install
+
+# Copy source code
+COPY frontend/ ./
+
+# Build the React app for production
+RUN npm run build
+
+# Use nginx to serve the built files
+FROM nginx:alpine
+
+# Copy built React files to nginx html directory
+COPY --from=build /app/build /usr/share/nginx/html
+
+# Copy nginx configuration
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+EXPOSE 80
